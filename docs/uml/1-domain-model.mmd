@@ -1,0 +1,175 @@
+classDiagram
+    direction TB
+    class Identifiable {
+        <<interface>>
+        +getId() String
+    }
+    class Person {
+        <<abstract>>
+        -String id
+        -String name
+        -String email
+        -String phone
+        #Person(id, name, email, phone)
+        +getRole()* String
+        +setName(String) void
+        +setEmail(String) void
+    }
+    class Roommate {
+        -LocalDate joinDate
+        -LocalDate leaveDate
+        +Roommate(id, name, email, phone, joinDate, leaveDate)
+        +getRole() String
+        +setOccupancy(LocalDate, LocalDate) void
+        +daysPresentIn(YearMonth) int
+        +isActiveOn(LocalDate) boolean
+    }
+    class Apartment {
+        -String name
+        -String address
+        -List~Roommate~ roommates
+        +addRoommate(Roommate) void
+        +removeRoommate(String) boolean
+        +getRoommates() List~Roommate~
+    }
+    class Bill {
+        -String id
+        -Utility utility
+        -YearMonth month
+        -double totalAmount
+        -double fixedCharge
+        -String paidById
+        -String strategyKey
+        -List~UsageRecord~ usageRecords
+        +addUsage(roommateId, units, days) void
+        +getTotalUnits() double
+        +update(...) void
+    }
+    class UsageRecord {
+        -String roommateId
+        -double units
+        -int daysPresent
+        +isParticipant() boolean
+    }
+    class Payment {
+        -String id
+        -String fromId
+        -String toId
+        -double amount
+        -LocalDate date
+        -YearMonth month
+    }
+    class Dispute {
+        -String id
+        -String billId
+        -String raisedById
+        -String reason
+        -DisputeStatus status
+        -String resolutionNote
+        +startReview(String) void
+        +resolve(String) void
+        +reject(String) void
+        +reopen() void
+    }
+    class DisputeStatus {
+        <<enumeration>>
+        OPEN
+        UNDER_REVIEW
+        RESOLVED
+        REJECTED
+        +isUnresolved() boolean
+    }
+    class Utility {
+        <<abstract>>
+        -UtilityType type
+        -String displayName
+        -String unitLabel
+        +isMetered()* boolean
+        +getDefaultStrategy()* SplitStrategy
+        +getBillingRule()* String
+        +calculateShares(Bill, SplitStrategy) List~Share~
+        #validate(Bill, SplitStrategy) void
+    }
+    class Electricity {
+        +calculateShares(Bill, SplitStrategy) List~Share~
+    }
+    class Water
+    class Gas {
+        +calculateShares(Bill, SplitStrategy) List~Share~
+    }
+    class Internet {
+        +isMetered() boolean
+    }
+    class Groceries {
+        +isMetered() boolean
+        +getDefaultStrategy() SplitStrategy
+    }
+    class Miscellaneous {
+        #validate(Bill, SplitStrategy) void
+    }
+    class UtilityType {
+        <<enumeration>>
+        ELECTRICITY
+        WATER
+        GAS
+        INTERNET
+        GROCERIES
+        MISCELLANEOUS
+        +create() Utility
+    }
+    class SplitStrategy {
+        <<interface>>
+        +getKey() String
+        +requiresUsage() boolean
+        +split(amount, records, unit) List~Share~
+    }
+    class AbstractSplitStrategy {
+        <<abstract>>
+        +split(amount, records, unit) List~Share~
+        #computeShares(amount, participants, unit)* List~Share~
+    }
+    class EqualSplit
+    class UsageBasedSplit
+    class ProratedByDaysSplit
+    class Share {
+        -String roommateId
+        -double amount
+        -String explanation
+        +merge(Share) void
+    }
+    class Ledger~T extends Utility~ {
+        -T utility
+        -List~Bill~ entries
+        +record(Bill) void
+        +totalFor(YearMonth) double
+        +monthlyTotals() SortedMap
+        +averageMonthly() double
+    }
+
+    Identifiable <|.. Person
+    Identifiable <|.. Bill
+    Identifiable <|.. Payment
+    Identifiable <|.. Dispute
+    Person <|-- Roommate
+    Apartment o-- "0..*" Roommate : aggregation
+    Bill *-- "1..*" UsageRecord : composition
+    Bill --> "1" Utility : association
+    Bill ..> Roommate : paidBy
+    Payment --> "2" Roommate : from / to
+    Dispute --> "1" Bill : about
+    Dispute --> "1" Roommate : raisedBy
+    Dispute --> DisputeStatus
+    Utility <|-- Electricity
+    Utility <|-- Water
+    Utility <|-- Gas
+    Utility <|-- Internet
+    Utility <|-- Groceries
+    Utility <|-- Miscellaneous
+    UtilityType ..> Utility : creates
+    Utility ..> SplitStrategy : uses
+    SplitStrategy <|.. AbstractSplitStrategy
+    AbstractSplitStrategy <|-- EqualSplit
+    AbstractSplitStrategy <|-- UsageBasedSplit
+    AbstractSplitStrategy <|-- ProratedByDaysSplit
+    SplitStrategy ..> Share : produces
+    Ledger o-- Bill

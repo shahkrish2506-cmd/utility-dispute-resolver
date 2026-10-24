@@ -1,0 +1,107 @@
+classDiagram
+    direction LR
+    class App {
+        +main(String[]) void
+    }
+    class WebServer {
+        -HttpServer server
+        +start(int port) int
+        +stop() void
+    }
+    class ApiHandler {
+        +handle(HttpExchange) void
+    }
+    class StaticFileHandler
+    class JsonMapper
+    class AppContext {
+        +roommates() RoommateService
+        +billing() BillingService
+        +payments() PaymentService
+        +disputes() DisputeService
+        +settlement() SettlementService
+        +reports() ReportService
+    }
+    class RoommateService
+    class BillingService {
+        +create(BillRequest) Bill
+        +preview(BillRequest) List~Share~
+        +calculateShares(Bill) List~Share~
+        +buildLedger(T utility) Ledger~T~
+    }
+    class PaymentService
+    class DisputeService
+    class PeriodService {
+        +finalizeMonth(YearMonth) void
+        +ensureEditable(YearMonth) void
+    }
+    class SettlementService {
+        +summarize(YearMonth) MonthSummary
+        +suggestTransfers(List) List~Transfer~
+    }
+    class ReportService {
+        +buildText(YearMonth) String
+        +buildCsv(YearMonth) String
+        +export(YearMonth) Path[]
+    }
+    class DemoDataService
+    class DataStore {
+        +loadAll() void
+        +wipe() void
+    }
+    class Repository~T extends Identifiable~ {
+        <<interface>>
+        +save(T) void
+        +delete(String) boolean
+        +findById(String) Optional~T~
+        +findAll() List~T~
+    }
+    class CsvRepository~T~ {
+        -Path file
+        -Map~String,T~ items
+        +load() void
+    }
+    class CsvMapper~T~ {
+        <<interface>>
+        +toRow(T) String[]
+        +fromRow(String[]) T
+    }
+    class AuditLogger {
+        +log(action, details) void
+    }
+    class AppException
+    class ValidationException
+    class NegativeUsageException
+    class InvalidBillException
+    class EntityNotFoundException
+    class UnresolvedDisputeException
+    class MonthLockedException
+
+    App --> WebServer
+    App --> AppContext
+    WebServer --> ApiHandler
+    WebServer --> StaticFileHandler
+    ApiHandler --> JsonMapper
+    ApiHandler --> AppContext
+    AppContext *-- RoommateService
+    AppContext *-- BillingService
+    AppContext *-- PaymentService
+    AppContext *-- DisputeService
+    AppContext *-- PeriodService
+    AppContext *-- SettlementService
+    AppContext *-- ReportService
+    AppContext *-- DemoDataService
+    AppContext *-- DataStore
+    SettlementService --> BillingService
+    SettlementService --> PaymentService
+    ReportService --> SettlementService
+    PeriodService --> DisputeService
+    DataStore *-- CsvRepository
+    DataStore *-- AuditLogger
+    Repository <|.. CsvRepository
+    CsvRepository --> CsvMapper
+    AppException <|-- ValidationException
+    AppException <|-- EntityNotFoundException
+    AppException <|-- UnresolvedDisputeException
+    AppException <|-- MonthLockedException
+    ValidationException <|-- NegativeUsageException
+    ValidationException <|-- InvalidBillException

@@ -1,0 +1,21 @@
+sequenceDiagram
+    actor U as Roommate (browser)
+    participant API as ApiHandler
+    participant P as PeriodService
+    participant D as DisputeService
+    participant R as ReportService
+    participant F as Files (data/, reports/)
+    U->>API: POST /api/period/2026-10/finalize
+    API->>P: finalizeMonth(2026-10)
+    P->>D: unresolvedFor(2026-10)
+    alt open disputes exist
+        D-->>P: [D2]
+        P-->>API: throw UnresolvedDisputeException
+        API-->>U: 409 "1 dispute(s) still unresolved [D2]"
+    else all disputes closed
+        D-->>P: []
+        P->>F: write finalized_months.txt, audit.log
+        API->>R: export(2026-10)
+        R->>F: settlement_2026-10.txt / .csv
+        API-->>U: 200 "Month finalised and report saved"
+    end
